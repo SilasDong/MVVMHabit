@@ -11,3 +11,7 @@ key.jks
 .externalNativeBuild
 /app/release
 /mvvmhabit/bintray.gradle
+.project
+app/class_files.txt
+.settings/org.eclipse.buildship.core.prefs
+app/mvvm.jks
