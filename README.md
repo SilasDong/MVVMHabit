@@ -1,31 +1,19 @@
-## 更新日志
-**v3.0.0：2018年10月8日**
+## 最新日志
+**v3.0.7：2019年1月25日**
 
-- 全面升级AAC，引入谷歌lifecycle组件；
-- 修改Base基类，满足新一套模式；
+- 优化框架代码，解决已知Bug；
+- 新增ViewPager+Fragment例子；
+- 新增RecycleView多布局例子；
 - 升级第三方依赖库；
-- 修改例子程序；
 - 修改文档说明。
+#### [更多日志](./UpdateLog.md)
 ***
-**v2.0.6：2018年7月19日**
 
-- 优化框架性能、基类逻辑，新增绑定命令；
-- 补充例子程序及注释；
-- 升级/修改第三方依赖库；
-- 补充文档说明。
-***
-**v2.0.0：2018年4月10日**
-
-- 全面升级RxJava2；
-- 优化绑定回调方式；
-- 升级第三方依赖库；
-- 微调例子程序。
-
-**注：[1.x-废弃版（最后版本：1.2.6.1）](https://github.com/goldze/MVVMHabit/tree/1.2.6.1)、[2.x-顺手版（最后版本：2.0.10）](https://github.com/goldze/MVVMHabit/tree/2.0.10)已停止维护，建议使用当前[3.x-健壮版（最后版本：3.0.6）](https://github.com/goldze/MVVMHabit)。**
+**注：[1.x-废弃版（最后版本：1.2.6.1）](https://github.com/goldze/MVVMHabit/tree/1.2.6.1)、[2.x-顺手版（最后版本：2.0.10）](https://github.com/goldze/MVVMHabit/tree/2.0.10)已停止维护，建议使用当前[3.x-健壮版（最后版本：3.1.0）](https://github.com/goldze/MVVMHabit)。**
 
 > **原文地址：** [https://github.com/goldze/MVVMHabit](https://github.com/goldze/MVVMHabit)
 
-<a target="_blank" href="//shang.qq.com/wpa/qunwpa?idkey=a8db5d8f95bc432606fd79c3d6e494e8a97401671c27de4a8fe975382a441a3e"><img border="0" src="http://pub.idqqimg.com/wpa/images/group.png" alt="MVVMHabit-Family" title="MVVMHabit-Family"></a>
+<a target="_blank" href="http://qm.qq.com/cgi-bin/qm/qr?k=Pvi-65bZN6fRly3VBC8F3fS7A-Pjinna"><img border="0" src="http://pub.idqqimg.com/wpa/images/group.png" alt="MVVMHabit-Family" title="MVVMHabit-Family"></a>
 # MVVMHabit
 ##
 目前，android流行的MVC、MVP模式的开发框架很多，然而一款基于MVVM模式开发框架却很少。**MVVMHabit是以谷歌DataBinding+LiveData+ViewModel框架为基础，整合Okhttp+RxJava+Retrofit+Glide等流行模块，加上各种原生控件自定义的BindingAdapter，让事件与数据源完美绑定的一款容易上瘾的实用性MVVM快速开发框架**。从此告别findViewById()，告别setText()，告别setOnClickListener()...
@@ -61,7 +49,7 @@
 	4. 通用的网络请求异常监听，根据不同的状态码或异常设置相应的message。
 	5. 全局的异常捕获，程序发生异常时不会崩溃，可跳入异常界面重启应用。
 	6. 全局事件回调，提供RxBus、Messenger两种回调方式。
-	7. 全局任意位置一行代码实现文件下载。
+	7. 全局任意位置一行代码实现文件进度下载监听（暂不支持多文件进度监听）。
 
 
 ## 1、准备工作
@@ -91,7 +79,7 @@ allprojects {
 ```gradle
 dependencies {
     ...
-    implementation 'com.github.goldze:MVVMHabit:3.0.6'
+    implementation 'com.github.goldze:MVVMHabit:3.1.0'
 }
 ```
 或

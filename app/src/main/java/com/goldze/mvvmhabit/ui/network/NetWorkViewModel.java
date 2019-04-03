@@ -1,7 +1,6 @@
 package com.goldze.mvvmhabit.ui.network;
 
 import android.app.Application;
-import android.arch.lifecycle.MutableLiveData;
 import android.databinding.ObservableArrayList;
 import android.databinding.ObservableBoolean;
 import android.databinding.ObservableList;
@@ -9,33 +8,28 @@ import android.support.annotation.NonNull;
 
 import com.goldze.mvvmhabit.BR;
 import com.goldze.mvvmhabit.R;
+import com.goldze.mvvmhabit.data.DemoRepository;
 import com.goldze.mvvmhabit.entity.DemoEntity;
-import com.goldze.mvvmhabit.service.DemoApiService;
-import com.goldze.mvvmhabit.utils.RetrofitClient;
 
-import java.util.concurrent.TimeUnit;
-
-import io.reactivex.Observable;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.Action;
 import io.reactivex.functions.Consumer;
 import me.goldze.mvvmhabit.base.BaseViewModel;
 import me.goldze.mvvmhabit.binding.command.BindingAction;
 import me.goldze.mvvmhabit.binding.command.BindingCommand;
+import me.goldze.mvvmhabit.bus.event.SingleLiveEvent;
 import me.goldze.mvvmhabit.http.BaseResponse;
 import me.goldze.mvvmhabit.http.ResponseThrowable;
 import me.goldze.mvvmhabit.utils.RxUtils;
 import me.goldze.mvvmhabit.utils.ToastUtils;
-import me.tatarka.bindingcollectionadapter2.BindingRecyclerViewAdapter;
 import me.tatarka.bindingcollectionadapter2.ItemBinding;
 
 /**
  * Created by goldze on 2017/7/17.
  */
 
-public class NetWorkViewModel extends BaseViewModel {
-    private int itemIndex = 0;
-    public MutableLiveData<NetWorkItemViewModel> deleteItemLiveData = new MutableLiveData();
+public class NetWorkViewModel extends BaseViewModel<DemoRepository> {
+    public SingleLiveEvent<NetWorkItemViewModel> deleteItemLiveData = new SingleLiveEvent<>();
     //封装一个界面发生改变的观察者
     public UIChangeObservable uc = new UIChangeObservable();
 
@@ -46,28 +40,14 @@ public class NetWorkViewModel extends BaseViewModel {
         public ObservableBoolean finishLoadmore = new ObservableBoolean(false);
     }
 
-    public NetWorkViewModel(@NonNull Application application) {
-        super(application);
+    public NetWorkViewModel(@NonNull Application application, DemoRepository repository) {
+        super(application, repository);
     }
 
     //给RecyclerView添加ObservableList
     public ObservableList<NetWorkItemViewModel> observableList = new ObservableArrayList<>();
     //给RecyclerView添加ItemBinding
     public ItemBinding<NetWorkItemViewModel> itemBinding = ItemBinding.of(BR.viewModel, R.layout.item_network);
-    //RecyclerView多布局写法
-//    public ItemBinding<Object> itemBinding = ItemBinding.of(new OnItemBind<Object>() {
-//        @Override
-//        public void onItemBind(ItemBinding itemBinding, int position, Object item) {
-//            if (position == 0) {
-//                //设置头布局
-//                itemBinding.set(BR.viewModel, R.layout.head_netword);
-//            } else {
-//                itemBinding.set(BR.viewModel, R.layout.item_network);
-//            }
-//        }
-//    });
-    //给RecyclerView添加Adpter，请使用自定义的Adapter继承BindingRecyclerViewAdapter，重写onBindBinding方法
-    public final BindingRecyclerViewAdapter<NetWorkItemViewModel> adapter = new BindingRecyclerViewAdapter<>();
     //下拉刷新
     public BindingCommand onRefreshCommand = new BindingCommand(new BindingAction() {
         @Override
@@ -80,15 +60,13 @@ public class NetWorkViewModel extends BaseViewModel {
     public BindingCommand onLoadMoreCommand = new BindingCommand(new BindingAction() {
         @Override
         public void call() {
-            if (itemIndex > 50) {
+            if (observableList.size() > 50) {
                 ToastUtils.showLong("兄dei，你太无聊啦~崩是不可能的~");
                 uc.finishLoadmore.set(!uc.finishLoadmore.get());
                 return;
             }
             //模拟网络上拉加载更多
-            Observable.just("")
-                    .delay(3, TimeUnit.SECONDS) //延迟3秒
-                    .compose(RxUtils.bindToLifecycle(getLifecycleProvider()))//界面关闭自动取消
+            addSubscribe(model.simulationLoadMore()
                     .compose(RxUtils.schedulersTransformer()) //线程调度
                     .doOnSubscribe(new Consumer<Disposable>() {
                         @Override
@@ -96,32 +74,29 @@ public class NetWorkViewModel extends BaseViewModel {
                             ToastUtils.showShort("上拉加载");
                         }
                     })
-                    .subscribe(new Consumer<Object>() {
+                    .subscribe(new Consumer<DemoEntity>() {
                         @Override
-                        public void accept(Object o) throws Exception {
-                            //刷新完成收回
-                            uc.finishLoadmore.set(!uc.finishLoadmore.get());
-                            //模拟一部分假数据
-                            for (int i = 0; i < 10; i++) {
-                                DemoEntity.ItemsEntity item = new DemoEntity.ItemsEntity();
-                                item.setId(-1);
-                                item.setName("模拟条目" + itemIndex++);
-                                NetWorkItemViewModel itemViewModel = new NetWorkItemViewModel(NetWorkViewModel.this, item);
+                        public void accept(DemoEntity entity) throws Exception {
+                            for (DemoEntity.ItemsEntity itemsEntity : entity.getItems()) {
+                                NetWorkItemViewModel itemViewModel = new NetWorkItemViewModel(NetWorkViewModel.this, itemsEntity);
                                 //双向绑定动态添加Item
                                 observableList.add(itemViewModel);
                             }
+                            //刷新完成收回
+                            uc.finishLoadmore.set(!uc.finishLoadmore.get());
                         }
-                    });
+                    }));
         }
     });
 
     /**
-     * 网络请求方法，在ViewModel中调用，Retrofit+RxJava充当Repository，即可视为Model层
+     * 网络请求方法，在ViewModel中调用Model层，通过Okhttp+Retrofit+RxJava发起请求
      */
     public void requestNetWork() {
-        RetrofitClient.getInstance().create(DemoApiService.class)
-                .demoGet()
-                .compose(RxUtils.bindToLifecycle(getLifecycleProvider())) //请求与View周期同步
+        //建议使用addSubscribe()套一层，请求与View周期同步
+        //addSubscribe();
+        model.demoGet()
+                .compose(RxUtils.bindToLifecycle(getLifecycleProvider())) //请求与View周期同步（过度期，尽量少使用）
                 .compose(RxUtils.schedulersTransformer()) //线程调度
                 .compose(RxUtils.exceptionTransformer()) // 网络错误的异常转换, 这里可以换成自己的ExceptionHandle
                 .doOnSubscribe(new Consumer<Disposable>() {
@@ -133,12 +108,10 @@ public class NetWorkViewModel extends BaseViewModel {
                 .subscribe(new Consumer<BaseResponse<DemoEntity>>() {
                     @Override
                     public void accept(BaseResponse<DemoEntity> response) throws Exception {
-                        itemIndex = 0;
                         //清除列表
                         observableList.clear();
                         //请求成功
                         if (response.getCode() == 1) {
-                            //将实体赋给LiveData
                             for (DemoEntity.ItemsEntity entity : response.getResult().getItems()) {
                                 NetWorkItemViewModel itemViewModel = new NetWorkItemViewModel(NetWorkViewModel.this, entity);
                                 //双向绑定动态添加Item
@@ -157,7 +130,6 @@ public class NetWorkViewModel extends BaseViewModel {
                         //请求刷新完成收回
                         uc.finishRefreshing.set(!uc.finishRefreshing.get());
                         ToastUtils.showShort(throwable.message);
-                        throwable.printStackTrace();
                     }
                 }, new Action() {
                     @Override
@@ -186,14 +158,12 @@ public class NetWorkViewModel extends BaseViewModel {
      * @param netWorkItemViewModel
      * @return
      */
-    public int getPosition(NetWorkItemViewModel netWorkItemViewModel) {
+    public int getItemPosition(NetWorkItemViewModel netWorkItemViewModel) {
         return observableList.indexOf(netWorkItemViewModel);
     }
 
     @Override
     public void onDestroy() {
         super.onDestroy();
-        observableList.clear();
-        observableList = null;
     }
 }

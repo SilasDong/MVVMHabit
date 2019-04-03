@@ -1,6 +1,8 @@
 package com.goldze.mvvmhabit.ui.network;
 
 import android.arch.lifecycle.Observer;
+import android.arch.lifecycle.ViewModelProviders;
+import android.content.pm.ActivityInfo;
 import android.databinding.Observable;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
@@ -12,11 +14,13 @@ import com.afollestad.materialdialogs.DialogAction;
 import com.afollestad.materialdialogs.MaterialDialog;
 import com.goldze.mvvmhabit.BR;
 import com.goldze.mvvmhabit.R;
+import com.goldze.mvvmhabit.app.AppViewModelFactory;
 import com.goldze.mvvmhabit.databinding.FragmentNetworkBinding;
 
 import me.goldze.mvvmhabit.base.BaseFragment;
 import me.goldze.mvvmhabit.utils.MaterialDialogUtils;
 import me.goldze.mvvmhabit.utils.ToastUtils;
+import me.tatarka.bindingcollectionadapter2.BindingRecyclerViewAdapter;
 
 /**
  * Created by goldze on 2017/7/17.
@@ -24,6 +28,12 @@ import me.goldze.mvvmhabit.utils.ToastUtils;
  */
 
 public class NetWorkFragment extends BaseFragment<FragmentNetworkBinding, NetWorkViewModel> {
+    @Override
+    public void initParam() {
+        super.initParam();
+        getActivity().setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+    }
+
     @Override
     public int initContentView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         return R.layout.fragment_network;
@@ -35,7 +45,16 @@ public class NetWorkFragment extends BaseFragment<FragmentNetworkBinding, NetWor
     }
 
     @Override
+    public NetWorkViewModel initViewModel() {
+        AppViewModelFactory factory = AppViewModelFactory.getInstance(getActivity().getApplication());
+        return ViewModelProviders.of(this, factory).get(NetWorkViewModel.class);
+    }
+
+    @Override
     public void initData() {
+        //给RecyclerView添加Adpter，请使用自定义的Adapter继承BindingRecyclerViewAdapter，重写onBindBinding方法，里面有你要的Item对应的binding对象。
+        // Adapter属于View层的东西, 不建议定义到ViewModel中绑定，以免内存泄漏
+        binding.setAdapter(new BindingRecyclerViewAdapter());
         //请求网络数据
         viewModel.requestNetWork();
     }
@@ -62,9 +81,9 @@ public class NetWorkFragment extends BaseFragment<FragmentNetworkBinding, NetWor
         viewModel.deleteItemLiveData.observe(this, new Observer<NetWorkItemViewModel>() {
             @Override
             public void onChanged(@Nullable final NetWorkItemViewModel netWorkItemViewModel) {
-                int index = viewModel.getPosition(netWorkItemViewModel);
+                int index = viewModel.getItemPosition(netWorkItemViewModel);
                 //删除选择对话框
-                MaterialDialogUtils.showBasicDialog(getContext(), "提示", "是否删除【" + netWorkItemViewModel.entity.get().getName() + "】？ 列表索引值：" + index)
+                MaterialDialogUtils.showBasicDialog(getContext(), "提示", "是否删除【" + netWorkItemViewModel.entity.get().getName() + "】？ position：" + index)
                         .onNegative(new MaterialDialog.SingleButtonCallback() {
                             @Override
                             public void onClick(@NonNull MaterialDialog dialog, @NonNull DialogAction which) {
